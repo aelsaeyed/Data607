@@ -1,0 +1,21 @@
+---
+title: "AhmedElsaeyed-607Lab5"
+author: "Ahmed Elsaeyed"
+date: "3/6/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Pulling in the data from the github:
+
+```{r}
+library(RCurl)
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/vote_predictions.csv")
+trump_vote_predictions <- read.csv(text = my_git_url, quote = "")
+
+my_git_url2 <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/averages.csv")
+vote_averages <- read.csv(text = my_git_url, quote = "")
+```
