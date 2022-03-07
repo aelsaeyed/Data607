@@ -2,20 +2,58 @@
 title: "AhmedElsaeyed-607Lab5"
 author: "Ahmed Elsaeyed"
 date: "3/6/2022"
-output: html_document
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    css: ae_theme.css
+    theme: cosmo
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(dplyr) 
 ```
 
-Pulling in the data from the github:
+1.
+# Making CSV and Reading In
+   
+   I made the CSV in excel simply by copying values, and then uploaded to my github.
 
 ```{r}
 library(RCurl)
-my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/vote_predictions.csv")
-trump_vote_predictions <- read.csv(text = my_git_url, quote = "")
-
-my_git_url2 <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/averages.csv")
-vote_averages <- read.csv(text = my_git_url, quote = "")
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB5/vax_info_csv.csv")
+vax_stats <- read.csv(text = my_git_url, quote = "")
 ```
+
+2.
+# Peeking at the Table
+  
+  I decided to keep the table wide and work on it that way. (Fvaxed refers to fully vaccinated). I didn't see any need to pivot this table, as every column represented a distinct variable already.
+```{r}
+head(vax_stats)
+```
+
+ 
+Question 1:    
+Do you have enough information to calculate the total population?  What does this total population represent?			
+
+The data in this chart only represents those people that were hospitalized. The total population would represent the total number of people living there, not just the hospitalized ones (its close to 10 million).  
+   
+Question 2:
+Calculate the Efficacy vs. Disease; Explain your results.  
+Efficacy vs Disease = 1 - (%fully faxed severe cases per 100k/%not vaxxed severe cases per 100k)
+
+I mutated the table to calculate the efficacy on a row-wise basis. The results show that the >50 population has a much higher efficacy vs severe disease.
+```{r Efficacy vs disease}
+
+vax_efficacy <-  vax_stats %>% 
+  rowwise() %>%
+  mutate(`efficacy_vs_severe_disease` = fvaxed_per_100k/not_vax_per_100k) 
+
+vax_efficacy
+```
+Question 3:
+From your calculation of efficacy vs. disease, are you able to compare the rate of severe cases in unvaccinated individuals to that in vaccinated individuals?					
+
+We would be able to say that the >50 population is vaccinated at much higher rates, even if the grand total of vaccinated elders is less than the grand total of vaccinated younger people. Given that the entire dataset has to do with hospitalized people, it would be easy to say at first that the higher efficacy group strangely has a higher rate of hospitalization, however its not clear that the hospitalizations are due to the vaccines and could be explained by the older demographic. 
