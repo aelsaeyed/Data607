@@ -1,0 +1,32 @@
+---
+title: "Superhero Movies"
+author: "Ahmed Elsaeyed"
+date: "3/10/2022"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    css: ae_theme.css
+    theme: cosmo
+---
+1.
+# Setting Up Libraries
+I will mainly be using tidyr and dplyr here to do the analysis.
+
+```{r setup, include=FALSE}
+library(tidyr)
+library(dplyr) 
+#library(stringr)
+```
+
+2.
+# Analysis Questions
+Thanks to *Deepa Sharma* for the analysis questions:   
+1- What is the highest-rated TV show of each year?   
+2- What is the highest rated TV show from each category in the data set?   
+   
+   For the first question, I will have to use tidyr to separate the "year" column, as it is includes the start year and end year of each show separated by a dash. I will assume the question asks for the highest rated TV show per release year. For the second question, I will assume that "category" refers to the genre column, which will also require separation as each cell of that column contains several genres that the show might fall into. 
+       
+     
+3.   
+# Pull in the Data from Github
