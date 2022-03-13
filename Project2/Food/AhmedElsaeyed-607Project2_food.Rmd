@@ -63,58 +63,6 @@ head(cases_cleaned, 10)
 ```
 
 
-5.
-## Grouping By State 
-To answer the first question I will be grouping by states and summing the deaths.
-
-
-```{r max/min deaths}
-sum_dth = cases_cleaned %>% 
-  group_by(state) %>% 
-  summarise(sum_tot_death= sum(tot_death)) 
-  
-
-state_max_deaths <- sum_dth[which.max(sum_dth$sum_tot_death),] 
-state_min_deaths <- sum_dth[which.min(sum_dth$sum_tot_death),] 
-
-state_min_deaths
-state_max_deaths
-```
-
-6.
-## Further Investigation
-It looks like a few states reported 0 deaths, so I wanted to see what the numbers looked like on that side of the spectrum. Below I simply display the sum of deaths per state but sorted in ascending order.
-
-From what I looked up, PW is Palau, a "freely associated state", which recorded 150 deaths.
-
-```{r min display}
-head(sum_dth %>% arrange(sum_tot_death), 10)
-```
-
-7. 
-## The Impact of the Vaccine 
-For this I will use the official release date of the vaccine in the United States for people over 16 after approval by the FDA, which is August 23, 2021. (https://www.fda.gov/news-events/press-announcements/fda-approves-first-covid-19-vaccine). I will order the data by date and draw a line graph of the new deaths per day. It would appear that around the same time the vaccine was released, the number of new death dropped followed by another resurgence.
-
-```{r vax}
-chrono_dth <- cases_cleaned %>% 
-  filter(new_death>0) %>% 
-  group_by(year, month, day) %>%
-  summarise(sum_new_dth = sum(new_death)) %>% 
-  mutate(`date` = as.Date(paste(year,month,day,sep="-"))) %>% 
-  filter(year > 2020)
-head(chrono_dth, 10)
-```
-```{r}
-dates_vline <- as.Date(c("2021-08-23"))                 # Define positions of vline
-dates_vline <- which(chrono_dth$date %in% dates_vline)
-
-ggplot(data = chrono_dth, aes(x = date, y = sum_new_dth)) +
-  geom_line(color="blue") +
-  geom_point() +
-  geom_vline(xintercept = as.numeric(chrono_dth$date[dates_vline]), color="red", linetype="dotted", size = 1)
-```
-
-
 
 
 

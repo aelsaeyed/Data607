@@ -1,6 +1,6 @@
 body {
     counter-reset: li; /* initialize counter named li */
-    background-color:#2f4f63;
+    background-color:#947070;
     color:white;
 }
 
@@ -44,9 +44,9 @@ ol > li:before {
        generated content but not positioning it (Camino 2 is one example) */
     margin-right:4px;
     padding:4px;
-    border-top:2px solid #264254;
+    border-top:2px solid #381d1d;
     color:#FFF;
-    background:#264254;
+    background:#381d1d;
     font-weight:bold;
     font-family:"Helvetica Neue", Arial, sans-serif;
     text-align:center;
@@ -81,8 +81,8 @@ highlight{
 
 
 .codechunk {
-  background:rgba(144, 185, 212, 0.24);
-  border: 2px solid white;
+  background:rgba(56, 29, 29, 0.24);
+  border: 2px solid #381d1d;
   font-weight: normal;
   color:white;
 }
