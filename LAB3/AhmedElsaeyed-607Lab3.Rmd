@@ -1,0 +1,56 @@
+---
+title: "String Manipulation"
+author: "Ahmed Elsaeyed"
+date: "2/18/2022"
+output:
+  html_document:
+    includes:
+      in_header: header.html
+    css: ae_theme.css
+    highlight: pygments
+    theme: cerulean
+---
+
+```{r setup, include=FALSE}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
