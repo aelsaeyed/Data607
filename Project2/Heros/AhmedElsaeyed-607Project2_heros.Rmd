@@ -8,25 +8,145 @@ output:
     fig_caption: true
     css: ae_theme.css
     theme: cosmo
+
 ---
+
 1.
-# Setting Up Libraries
+## Setting Up Libraries
 I will mainly be using tidyr and dplyr here to do the analysis.
 
+```{css, echo=FALSE}
+
+```
+
 ```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(class.source = "codechunk")
 library(tidyr)
 library(dplyr) 
+library(RCurl)
+library(splitstackshape)
+library(reshape2)
 #library(stringr)
 ```
 
 2.
-# Analysis Questions
+## Analysis Questions
 Thanks to *Deepa Sharma* for the analysis questions:   
 1- What is the highest-rated TV show of each year?   
 2- What is the highest rated TV show from each category in the data set?   
-   
-   For the first question, I will have to use tidyr to separate the "year" column, as it is includes the start year and end year of each show separated by a dash. I will assume the question asks for the highest rated TV show per release year. For the second question, I will assume that "category" refers to the genre column, which will also require separation as each cell of that column contains several genres that the show might fall into. 
        
      
 3.   
-# Pull in the Data from Github
+## Pull in the Data from Github   
+For the first question, I will have to use tidyr to separate the "year" column, as it is includes the start year and end year of each show separated by a dash. I will assume the question asks for the highest rated TV show per release year. For the second question, I will assume that "category" refers to the genre column, which will also require separation as each cell of that column contains several genres that the show might fall into. 
+
+```{r github }
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/Project2/Heros/Dataset_Superhero-TV-Shows.csv")
+superhero_tv_shows_raw <- read.csv(text = my_git_url)
+
+head(superhero_tv_shows_raw, 10)
+```
+
+4.   
+## Separate the Year Column
+Tidyr provides a very convenient function that separates the values in a column into separate columns. I'm doing so to isolate the initial year. Previously I used my own methods to achieve similar results- I would have used the mutate function from dplyr to create two new columns and applied a function across each row to extract the dates using string manipulation to populate those columns.  
+It turns out that this data set has some shows that have not come out yeat, and so have a "start_date" of TBA. I filter those out first using dplyr. While I am at it I will also change the datatypes for some columns to numerical types in case I need to use them later. 
+
+```{r tidyr-column-separation}
+shows_year_separated <- superhero_tv_shows_raw %>% 
+  separate( release_year, c("start_year", "end_year"), "-", fill= "right", convert = TRUE) %>% 
+  filter(start_year != "TBA") %>% 
+  mutate(`imdb_rating`= as.numeric(imdb_rating)) %>% 
+  mutate(`start_year`= as.numeric(start_year)) %>% 
+  mutate(`runtime`= as.numeric(runtime)) 
+  
+head(shows_year_separated, 10)
+```
+5.   
+## Group by Start Year and Get Max Rating   
+Below I am invesitgating to find the highest rated show per year. Tidyr lets you group by several columns, and an interesting feature it also has is being able to see the groupings using group_keys. I've grouped the shows by start_year and show_title and imdb_rating, and then arranged the data to order by year and then by rating, descending. The result is a dataframe with the shows listed for each year, and ranked by highest show in that year.   
+
+```{r group by and summarize}
+ratings_by_year <- shows_year_separated %>%  filter(!is.na(imdb_rating)) %>%  
+  group_by(start_year, show_title, imdb_rating) %>% 
+  group_keys() %>% 
+  arrange(desc(start_year), desc(imdb_rating))
+  
+head(ratings_by_year, 10)
+
+```
+5.  
+## Solution 1: 
+Here I simply display the same data but with only the highest ranking show per year.
+```{r neatly display}
+highest_rating_by_year <- shows_year_separated %>%  filter(!is.na(imdb_rating)) %>%  
+  group_by(start_year) %>% 
+  filter(imdb_rating == max(imdb_rating)) %>% 
+  select(c(3,1,2)) %>% 
+  arrange(desc(start_year)) 
+
+head(highest_rating_by_year, 20)
+
+```
+
+6.
+## Separating the Genre Column
+Here I will be returning to the original dataset to answer the second analysis question, mainly to rank the shows by genre. I will begin by separating the genre column. This is a bit trickier because I don't know how many genres there are and the shows have an inconsistent number of genres.  
+
+```{r quick select}
+shows_subset <- superhero_tv_shows_raw %>%  select(c(1,2,5))
+head(shows_subset, 10)
+```
+
+```{r separating genre column}
+
+separated_genres <- shows_subset %>%  
+  cSplit("genre", sep=",") %>% 
+  dcast(show_title+imdb_rating~genre_1) 
+
+
+```
+
+7.  
+## Group Per Genre
+I separated the genre column such that there is a column for every possible FIRST genre, and it will have an indicator of "1" if that show is of that genre. I could not figure out how to account for every genre a particular show could be a part of- I will use the first genre in the list assuming its the most relevant genre, and to simplify this problem. Below I take one column, select only the rows that have a "1", indicating that the row contains a show with that genre. Then I rank the result by imdb rating. Due to the nature of the above solution, this would have to be done per genre column.
+
+```{r highest ranking by genre}
+action_genre <- separated_genres %>% 
+  select(1,2,3) %>% 
+  filter(Action == 1) %>% 
+  filter(imdb_rating != "Not-Rated") %>% 
+  mutate(`imdb_rating`= as.numeric(imdb_rating)) %>% 
+  filter(!is.na(imdb_rating))  
+  
+
+highest_ranked <- action_genre[which.max(action_genre$imdb_rating),]
+highest_ranked
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

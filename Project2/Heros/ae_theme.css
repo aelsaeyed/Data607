@@ -7,7 +7,7 @@ body {
 h1 {
     font-family:Arial, Helvetica, sans-serif;
     font-weight:bold;
-    color:#8C2C18;
+    color: #8C2C18;
 }
 
 h2 {
@@ -77,4 +77,11 @@ hr {
 highlight{
   color:#fff;
   background:#317EAC;
+}
+
+.codechunk {
+  background:rgba(136, 110, 44, 0.24);
+  border: 2px solid #8C2C18;
+  font-weight: normal;
+  color:white;
 }
