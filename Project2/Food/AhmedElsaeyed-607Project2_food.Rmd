@@ -1,5 +1,5 @@
 ---
-title: "COVID Cases over Time"
+title: "Risky Restaurants"
 author: "Ahmed Elsaeyed"
 date: "3/10/2022"
 output:
@@ -27,41 +27,57 @@ library(ggplot2)
 
 2.
 ## Analysis Questions
-Thanks to *Moiya Josephs* for the analysis questions:   
-1- Find the state with the highest and lowest deaths.  
-2- Compare the death rate both before and after the vaccine was released.   
-       
-     
+Thanks to *Vyanna Hill* for the analysis prompt:   
+Find out if there is a trend of type of facilities and their risk level given by the inspector.
+
 3.   
 ## Pull in the Data from Github   
 To answer the questions above I will be doing a lot of sorting and group_by + filtering.  
 
 ```{r github }
-my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/Project2/COVID/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time.csv")
-covid_cases_raw <- read.csv(text = my_git_url)
-head(covid_cases_raw, 10)
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/Project2/Food/food-inspections.csv")
+insp_raw <- read.csv(text = my_git_url)
+head(insp_raw, 10)
 ```
 
 4.
-## Fixing up and Subsetting Columns
-Some of the columns I need to be numerical are in character format, so I will take care of that first. I will also separate the submission_date column into 3 columns, one each for month, day, and year. The commas in the numerical columns had to be removed first.   
+## Subsetting Columns
+Ill select only the columns that I want to explore.Im going to see if there are any trends in risk common to individial restaurant chains, and I will also see if theres a commonality among restaurants by zipcodes. 
 
 ```{r cleanup}
-cases_cleaned = covid_cases_raw %>% 
-  separate(ï..submission_date, into = c("month", "day", "year"), sep="/") %>%  #separate the date values
-  mutate(`new_death`= gsub(",", "", new_death) ) %>% #remove commas
-  mutate(`new_death`= as.integer(new_death) ) %>%    #cast to int
-  mutate(`tot_death`= gsub(",", "", tot_death) ) %>% #remove commas
-  mutate(`tot_death`= as.integer(tot_death) ) %>%    #cast to int
-  mutate(`year`= as.integer(year)) %>%    #cast the date values as int as well
-  mutate(`month`= as.integer(month)) %>% 
-  mutate(`day`= as.integer(day)) %>% 
-  arrange(desc(year), desc(month), desc(day)) %>% #arrange by dates descending
-  select(3,1,2,4,10,13) #Select only the columns I need
-  
-head(cases_cleaned, 10)
-```
+insp_cleaned = insp_raw %>% 
+  select(2,5,6,7,10)
 
+head(insp_cleaned)
+
+```
+5. 
+## Grouping by Restaurant
+Here I separate the risk column to isolate the numerical values associate with different levels of risk. I know I only want the high risk establishments, and this will make it easier to filter for those. First, I group by the company name, and then I create 3 columns, each that summarize one risk value, from 1 to 3. I then create a new column that stores the total number of observations per restaurant. At that point I am ready to compare the high risk establishments vs the total number of establishment per brand/restaurant/company. This dataset has a large number of companies that have only one branch in Chicago, and there are also many that are not high risk. To get useful information I filter out the ones with no high risk observation and arrange my data to show the companies with the lowest rates of high risk establishments. The table below shows that the Illinois Sportservice Inc. for example has 200 total establishments but only 2 that are at high risk.
+```{r grouping}
+
+
+res_grp <- insp_cleaned %>%
+  separate(Risk, c("Risk", "risknum", "risk_lvl")) %>%
+  mutate(`risknum` = as.integer(risknum)) %>%
+  select(1,2,4,6,7) %>%
+  group_by(DBA.Name) %>%
+  summarize(
+    count_highrisk = sum(risknum[risknum==1]),
+    count_medrisk = sum(risknum[risknum==2]),
+    count_lowrisk = sum(risknum[risknum==3]),
+    count_total = sum(risknum[risknum])
+  ) %>% 
+  mutate(`rate_high_risk` = (count_highrisk/count_total) ) %>%
+  filter(count_highrisk > 0) %>% 
+  arrange(rate_high_risk) %>% 
+  select(1,2,5,6)
+  
+  
+  
+
+head(res_grp)
+```
 
 
 
