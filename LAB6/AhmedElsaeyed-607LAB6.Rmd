@@ -1,0 +1,48 @@
+---
+title: "Web Scraping"
+author: "Ahmed Elsaeyed"
+date: "3/17/2022"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    css: ae_theme.css
+    theme: cosmo
+
+---
+
+1.
+## Setting Up Libraries
+I will mainly be using tidyr and dplyr here to do the analysis.
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(class.source = "codechunk")
+library(tidyr)
+library(dplyr) 
+library(RCurl)
+library(ggplot2)
+
+```
+
+2.
+## Goal
+Pull in book information for three books, each in a different format - XML, JSON, and HTML. I will put the data on my github and read them in using getURL. 
+
+3.   
+## Pull in the Data from Github   
+
+
+```{r github }
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/Project2/Food/food-inspections.csv")
+insp_raw <- read.csv(text = my_git_url)
+head(insp_raw, 10)
+```
+
+
+
+
+
+
+
+
