@@ -25,6 +25,7 @@ library(ggplot2)
 library(XML)
 library(jsonlite)
 
+
 ```
 
 2.
@@ -32,24 +33,30 @@ library(jsonlite)
 Pull in book information for three books, each in a different format - XML, JSON, and HTML. I will put the data on my github and read them in using getURL. 
 
 3.   
-## Pull in the Data from Github   
-
-
-```{r github }
+## The XML   
+```{r xml url }
 my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.xml")
+#booksXML <- xmlToDataFrame(my_git_url)
 booksXML <- xmlToList(my_git_url)
 booksXML
 ```
-```{r github }
-my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.json")
-fromjson = fromJSON(my_git_url)
-booksJSON <- as.data.frame(my_git_url)
-booksJSON
-```
+4.   
 
-```{r github }
+## The JSON
+```{r json url }
+
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.json")
+
+booksJSON <- jsonlite::fromJSON( my_git_url)
+booksJSON
+
+```
+5. 
+## The HTML
+```{r html url }
 my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.html")
 booksHTML <- readHTMLTable(my_git_url, which=1)
+booksHTML
 ```
 
 

@@ -179,15 +179,88 @@ pre code {
 <p>I will mainly be using tidyr and dplyr here to do the analysis.</p></li>
 <li><h2 id="goal">Goal</h2>
 <p>Pull in book information for three books, each in a different format - XML, JSON, and HTML. I will put the data on my github and read them in using getURL.</p></li>
-<li><h2 id="pull-in-the-data-from-github">Pull in the Data from Github</h2></li>
+<li><h2 id="the-xml">The XML</h2></li>
 </ol>
-<pre class="r codechunk"><code>my_git_url &lt;- getURL(&quot;https://raw.githubusercontent.com/aelsaeyed/Data607/main/Project2/Food/food-inspections.csv&quot;)
-insp_raw &lt;- read.csv(text = my_git_url)
-head(insp_raw, 10)</code></pre>
+<pre class="r codechunk"><code>my_git_url &lt;- getURL(&quot;https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.xml&quot;)
+booksXML &lt;- xmlToList(my_git_url)
+booksXML</code></pre>
+<pre><code>## $BOOK
+## $BOOK$TITLE
+## [1] &quot;The Science of Interstellar&quot;
+## 
+## $BOOK$AUTHOR
+## [1] &quot;Kip Thorne&quot;
+## 
+## $BOOK$COUNTRY
+## [1] &quot;USA&quot;
+## 
+## $BOOK$PUBLISHER
+## [1] &quot;W.W. Norton and Company&quot;
+## 
+## $BOOK$YEAR
+## [1] &quot;2014&quot;
+## 
+## 
+## $BOOK
+## $BOOK$TITLE
+## [1] &quot;The Three Body Problem&quot;
+## 
+## $BOOK$AUTHOR
+## [1] &quot;Cixin Liu&quot;
+## 
+## $BOOK$COUNTRY
+## [1] &quot;USA&quot;
+## 
+## $BOOK$PUBLISHER
+## [1] &quot;Tor&quot;
+## 
+## $BOOK$YEAR
+## [1] &quot;2006&quot;
+## 
+## 
+## $BOOK
+## $BOOK$TITLE
+## [1] &quot;Never Split the Difference&quot;
+## 
+## $BOOK$AUTHOR
+## [1] &quot;Chris Voss&quot;
+## 
+## $BOOK$AUTHOR
+## [1] &quot;Tahl Raz&quot;
+## 
+## $BOOK$COUNTRY
+## [1] &quot;USA&quot;
+## 
+## $BOOK$PUBLISHER
+## [1] &quot;Random House&quot;
+## 
+## $BOOK$YEAR
+## [1] &quot;2016&quot;</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li></li>
+</ol>
+<div id="the-json" class="section level2">
+<h2>The JSON</h2>
+<pre class="r codechunk"><code>my_git_url &lt;- getURL(&quot;https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.json&quot;)
+fromjson = fromJSON(my_git_url)
+booksJSON &lt;- as.data.frame(my_git_url)
+booksJSON</code></pre>
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
-{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["ï..Inspection.ID"],"name":[1],"type":["int"],"align":["right"]},{"label":["DBA.Name"],"name":[2],"type":["chr"],"align":["left"]},{"label":["AKA.Name"],"name":[3],"type":["chr"],"align":["left"]},{"label":["License.."],"name":[4],"type":["int"],"align":["right"]},{"label":["Facility.Type"],"name":[5],"type":["chr"],"align":["left"]},{"label":["Risk"],"name":[6],"type":["chr"],"align":["left"]},{"label":["Zip"],"name":[7],"type":["int"],"align":["right"]},{"label":["Inspection.Date"],"name":[8],"type":["chr"],"align":["left"]},{"label":["Inspection.Type"],"name":[9],"type":["chr"],"align":["left"]},{"label":["Results"],"name":[10],"type":["chr"],"align":["left"]}],"data":[{"1":"2352683","2":"CHIPOTLE MEXICAN GRILL","3":"CHIPOTLE MEXICAN GRILL","4":"2670642","5":"Restaurant","6":"Risk 1 (High)","7":"60613","8":"2019-12-04T00:00:00.000","9":"License Re-Inspection","10":"Pass w/ Conditions","_rn_":"1"},{"1":"2352734","2":"CHILI'S T-I","3":"CHILI'S (T1-B14)","4":"34169","5":"Restaurant","6":"Risk 1 (High)","7":"60666","8":"2019-12-04T00:00:00.000","9":"Canvass","10":"Pass","_rn_":"2"},{"1":"2352713","2":"NICK'S FIRE GRILL STEAK & LEMONADE INC.","3":"NICK'S FIRE GRILL STEAK & LEMONADE INC.","4":"2699090","5":"","6":"Risk 1 (High)","7":"60629","8":"2019-12-04T00:00:00.000","9":"License","10":"Not Ready","_rn_":"3"},{"1":"2352701","2":"TAQUERIA BLUE LINE INC.","3":"","4":"2703436","5":"Restaurant","6":"Risk 1 (High)","7":"60618","8":"2019-12-04T00:00:00.000","9":"License","10":"Pass w/ Conditions","_rn_":"4"},{"1":"2352727","2":"PORTAGE PARK DAY NURSERY","3":"MOSAIC EARLY CHILDHOOD ACADEMY","4":"2215815","5":"Children's Services Facility","6":"Risk 1 (High)","7":"60641","8":"2019-12-04T00:00:00.000","9":"Canvass","10":"Pass","_rn_":"5"},{"1":"2352738","2":"AMARIT RESTAURANT","3":"AMARIT RESTAURANT","4":"1801618","5":"Restaurant","6":"Risk 1 (High)","7":"60605","8":"2019-12-04T00:00:00.000","9":"Canvass Re-Inspection","10":"Pass","_rn_":"6"},{"1":"2352684","2":"CHIPOTLE MEXICAN GRILL","3":"CHIPOTLE MEXICAN GRILL","4":"2670643","5":"Restaurant","6":"Risk 1 (High)","7":"60613","8":"2019-12-04T00:00:00.000","9":"License Re-Inspection","10":"Pass w/ Conditions","_rn_":"7"},{"1":"2352702","2":"NAIBOA LATIN STORE","3":"NAIBOA LATIN STORE","4":"2698776","5":"Grocery Store","6":"Risk 3 (Low)","7":"60657","8":"2019-12-04T00:00:00.000","9":"License","10":"Pass w/ Conditions","_rn_":"8"},{"1":"2352718","2":"JAMIESON","3":"JAMIESON PUBLIC SCHOOL","4":"23931","5":"School","6":"Risk 1 (High)","7":"60659","8":"2019-12-04T00:00:00.000","9":"Canvass","10":"Pass","_rn_":"9"},{"1":"2352696","2":"GATEWAY MONTESSORI SCHOOL","3":"GATEWAY MONTESSORI","4":"2506383","5":"Children's Services Facility","6":"Risk 1 (High)","7":"60641","8":"2019-12-04T00:00:00.000","9":"Canvass","10":"Pass","_rn_":"10"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["my_git_url"],"name":[1],"type":["chr"],"align":["left"]}],"data":[{"1":"[\\n   {\\n      \"TITLE\": \"The Science of Interstellar\",\\n      \"AUTHOR\": \"Kip Thorne\",\\n      \"COUNTRY\": \"USA\",\\n      \"PUBLISHER\": \"W.W. Norton and Company\",\\n      \"YEAR\": \"2014\"\\n   },\\n   {\\n      \"TITLE\": \"The Three Body Problem\",\\n      \"AUTHOR\": \"Cixin Liu\",\\n      \"COUNTRY\": \"USA\",\\n      \"PUBLISHER\": \"Tor\",\\n      \"YEAR\": \"2006\"\\n   },\\n   {\\n      \"TITLE\": \"Never Split the Difference\",\\n      \"AUTHOR\": [\\n         \"Chris Voss\",\\n         \"Tahl Raz\"\\n      ],\\n      \"COUNTRY\": \"USA\",\\n      \"PUBLISHER\": \"Random House\",\\n      \"YEAR\": \"2016\"\\n   }\\n]"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
+</div>
+<ol start="5" style="list-style-type: decimal">
+<li><h2 id="the-html">The HTML</h2></li>
+</ol>
+<pre class="r codechunk"><code>my_git_url &lt;- getURL(&quot;https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.html&quot;)
+booksHTML &lt;- readHTMLTable(my_git_url, which=1)
+booksHTML</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["TITLE"],"name":[1],"type":["chr"],"align":["left"]},{"label":["AUTHOR"],"name":[2],"type":["chr"],"align":["left"]},{"label":["COUNTRY"],"name":[3],"type":["chr"],"align":["left"]},{"label":["PUBLISHER"],"name":[4],"type":["chr"],"align":["left"]},{"label":["YEAR"],"name":[5],"type":["chr"],"align":["left"]}],"data":[{"1":"TITLE","2":"AUTHOR","3":"COUNTRY","4":"PUBLISHER","5":"YEAR"},{"1":"The Science of Interstellar","2":"Kip Thorne","3":"USA","4":"W.W. Norton and Company","5":"2014"},{"1":"The Three Body Problem","2":"Cixin Liu","3":"USA","4":"Tor","5":"2006"},{"1":"Never Split the Difference","2":"\"Chris Voss,Tahl Raz\"","3":"USA","4":"Random House","5":"2016"},{"1":"","2":"NA","3":"NA","4":"NA","5":"NA"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
 </div>
 
 
