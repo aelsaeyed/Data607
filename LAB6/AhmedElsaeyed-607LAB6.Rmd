@@ -42,11 +42,15 @@ booksXML
 ```
 ```{r github }
 my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.json")
-fromjson = stream_in(file(my_git_url))
-
+fromjson = fromJSON(my_git_url)
+booksJSON <- as.data.frame(my_git_url)
+booksJSON
 ```
 
-
+```{r github }
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.html")
+booksHTML <- readHTMLTable(my_git_url, which=1)
+```
 
 
 
