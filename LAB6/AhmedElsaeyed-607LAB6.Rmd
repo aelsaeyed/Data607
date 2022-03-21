@@ -22,6 +22,8 @@ library(tidyr)
 library(dplyr) 
 library(RCurl)
 library(ggplot2)
+library(XML)
+library(jsonlite)
 
 ```
 
@@ -34,11 +36,15 @@ Pull in book information for three books, each in a different format - XML, JSON
 
 
 ```{r github }
-my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/Project2/Food/food-inspections.csv")
-insp_raw <- read.csv(text = my_git_url)
-head(insp_raw, 10)
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.xml")
+booksXML <- xmlToList(my_git_url)
+booksXML
 ```
+```{r github }
+my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.json")
+fromjson = stream_in(file(my_git_url))
 
+```
 
 
 
