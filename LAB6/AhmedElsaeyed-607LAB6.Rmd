@@ -37,11 +37,10 @@ Pull in book information for three books, each in a different format - XML, JSON
 ```{r xml url }
 my_git_url <- getURL("https://raw.githubusercontent.com/aelsaeyed/Data607/main/LAB6/books.xml")
 #booksXML <- xmlToDataFrame(my_git_url)
-booksXML <- xmlToList(my_git_url)
+booksXML <- xmlToDataFrame(my_git_url)
 booksXML
 ```
-4.   
-
+4.  
 ## The JSON
 ```{r json url }
 
@@ -59,7 +58,7 @@ booksHTML <- readHTMLTable(my_git_url, which=1)
 booksHTML
 ```
 
-
+The solution I attempted for the XML file resulted in some errors when there were multiple authors- I couldn't figure out how to get around the errors cause by multiple nested children. For the most part, when removing the second author for "Never Split the Difference", the data frames look similar although not perfectly identical. The "Author" column was not parsed properly from the array in the JSON file.
 
 
 

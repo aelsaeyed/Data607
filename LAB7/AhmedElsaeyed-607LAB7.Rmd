@@ -1,0 +1,64 @@
+---
+title: "AhmedElsaeyed-607LAB7"
+author: "Ahmed Elsaeyed"
+date: "4/3/2022"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    css: ae_theme.css
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, class.source = "codechunk")
+library(httr)
+library(jsonlite)
+library(stringr)
+```
+
+After logging in and reading the spec sheet on the NYT Developer site, I created an account and got my dev keys. The spec shows an example call: https://api.nytimes.com/svc/movies/v2/reviews/search.json?query=godfather&api-key=yourkey. Below I will try it just to make sure it works with httr.
+
+```{r example call}
+call <- GET("https://api.nytimes.com/svc/movies/v2/reviews/search.json?query=the+godfather&api-key=v8Fj971hg0hIrH00YLiGY2vyE2U1MXyv")
+call
+```
+
+A satus 200 shows us that we have successfully connected, and the content type and size show us that we've received a json of size 6.8kb. Now to explore the returned result:
+
+```{r exploration}
+godfather_reviews <- content(call, "text")
+godfather_reviews
+```
+
+We should be able to take the JSON returned by the get call and turn it into a dataframe with jsonlite:
+
+```{r todataframe}
+godfather_reviews_df = as.data.frame(fromJSON(txt = godfather_reviews))
+head(godfather_reviews_df)
+```
+
+Now that I know it works, I can construct a function that acts as a wrapper around this API that accepts whatever strings I want and searches up the NYT site. It will return a data frame with the results.
+
+```{r API Wrapper}
+findReviews <- function(search_string){
+  api= "https://api.nytimes.com/svc/movies/v2/reviews/search.json?query=%s&api-key=v8Fj971hg0hIrH00YLiGY2vyE2U1MXyv"
+  clean_string<-str_replace(search_string, " ", "+")
+  call_string = sprintf(api, clean_string)
+  get_result<-GET(call_string)
+  unparsed_json <- content(get_result, "text")
+  json_as_dataframe <- as.data.frame(fromJSON(txt = unparsed_json) )
+}
+
+```
+
+
+```{r Tests}
+ironman_reviews <- findReviews("Iron Man")
+head(ironman_reviews)
+```
+
+```{r select}
+
+```
+More advanced versions of this function would be able to build more complicated query strings based on user input. This api allows filtering by different parameters like release date and reviewer name. 
