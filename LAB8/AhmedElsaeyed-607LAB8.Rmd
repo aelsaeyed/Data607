@@ -1,0 +1,335 @@
+---
+title: "AhmedElsaeyed-607LAB8"
+author: "Ahmed Elsaeyed"
+date: "4/8/2022"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    css: ae_theme.css
+    theme: cosmo
+---
+In the beginning of this lab I will be following along the tutorial from the tidytextmining textbook available here: https://www.tidytextmining.com/sentiment.html. 
+
+Silge, Julia, and David Robinson. “2 Sentiment Analysis with Tidy Data.” Text Mining with R: A Tidy Approach, O'Reilly, Bejing, 2017, https://www.tidytextmining.com/sentiment.html. Accessed 8 Apr. 2022. 
+
+I begin with the required libraries, including the interesting janeaustenr library.
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, class.source = "codechunk")
+library(janeaustenr)
+library(dplyr)
+library(stringr)
+library(tidytext)
+library(textdata)
+library(tidyr)
+library(ggplot2)
+library(wordcloud)
+library(reshape2)
+library(data.table)
+```
+
+The code below splits out all of the Austen books into rows containing one word each.
+```{r import book data and re-arrange}
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(
+    linenumber = row_number(),
+    chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]", ignore_case = TRUE)))) %>%
+    ungroup() %>%
+    unnest_tokens(word, text)
+
+tidy_books
+```
+Next it's time to filter for words considered "joy words" with the help of the NRC lexicon- a dictionary of words that have a "sentiment" attached to them. 
+```{r filtering for joy words}
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+```
+
+Here I create a new dataframe containing the sentiments in all the books, this time using the "bing" lexicon, which categorizes words in a binary way into negative or positive. The result is a dataframe where every row contains a count of negative and positive words for every 80 lines in the books.
+```{r bing}
+jane_austen_sentiment <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+jane_austen_sentiment
+```
+
+I plot the sections of text on the x-axis against the sentiment "count" on the y-axis per book:
+```{r display and compare}
+ggplot(jane_austen_sentiment, aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x")
+
+```
+
+
+```{r pride and prejudice}
+
+pride_prejudice <- tidy_books %>% 
+  filter(book == "Pride & Prejudice")
+
+afinn <- pride_prejudice %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bing_and_nrc <- bind_rows(
+  pride_prejudice %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  pride_prejudice %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+```
+
+```{r select}
+bind_rows(afinn, 
+          bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+```
+```{r word counts}
+bing_word_counts <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  slice_max(n, n = 10) %>% 
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+```
+
+```{r specify stop-words}
+custom_stop_words <- bind_rows(tibble(word = c("miss"),  
+                                      lexicon = c("custom")), 
+                               stop_words)
+custom_stop_words
+```
+
+```{r word cloud}
+tidy_books %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+```
+
+```{r}
+tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  acast(word ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("gray20", "gray80"),
+                   max.words = 100)
+```
+
+```{r}
+p_and_p_sentences <- tibble(text = prideprejudice) %>% 
+  unnest_tokens(sentence, text, token = "sentences")
+
+p_and_p_sentences$sentence[2]
+```
+
+```{r}
+austen_chapters <- austen_books() %>%
+  group_by(book) %>%
+  unnest_tokens(chapter, text, token = "regex", 
+                pattern = "Chapter|CHAPTER [\\dIVXLC]") %>%
+  ungroup()
+
+austen_chapters %>% 
+  group_by(book) %>% 
+  summarise(chapters = n())
+```
+
+```{r}
+bingnegative <- get_sentiments("bing") %>% 
+  filter(sentiment == "negative")
+
+wordcounts <- tidy_books %>%
+  group_by(book, chapter) %>%
+  summarize(words = n())
+
+tidy_books %>%
+  semi_join(bingnegative) %>%
+  group_by(book, chapter) %>%
+  summarize(negativewords = n()) %>%
+  left_join(wordcounts, by = c("book", "chapter")) %>%
+  mutate(ratio = negativewords/words) %>%
+  filter(chapter != 0) %>%
+  slice_max(ratio, n = 1) %>% 
+  ungroup()
+```
+
+
+For my own analysis I will be using a corpus with Harry Potter books.
+```{r}
+if (packageVersion("devtools") < 1.6) {
+  install.packages("devtools")
+}
+
+devtools::install_github("bradleyboehmke/harrypotter")
+
+library(harrypotter)
+```
+Im interested only in the last book, my favorite of the series. The library provides the entire book as text separated by chapters, and here I separate it out on a sentence-per-row basis while labeling the chapters. 
+```{r tidying}
+hallows <- deathly_hallows
+hallows_table <- tibble(chapter=seq_along(hallows), text = hallows )  %>% unnest_tokens(sentence,text, token="sentences")
+
+hallows_table
+
+```
+For the next step I will be using sentimentr to get the sentiment per sentence. 
+```{r}
+library(sentimentr)
+hallows_sent <- hallows_table %>%  
+  mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+```
+
+The result is that now each row, containing a sentence, will also contain a sentiment score for that sentence.
+```{r}
+hallows_sent
+```
+I want to gauge the negativity or positivity of the book by chapter and then plot the result. 
+```{r}
+hallows_ratio = hallows_sent %>%  
+  group_by(chapter) %>% 
+  summarize(sum(sentiment)) %>% 
+  dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+
+hallows_ratio
+```
+```{r}
+ggplot(hallows_ratio, aes(x=chapter, y=chap_sentiment)) +
+  geom_col(show.legend = FALSE)
+```
+
+It seems like the book is exceedingly negative for the most part (which checks out considering You-Know-Who is in power for most of it). We can compare this to one of the earlier books in the series by re-doing the analysis:
+
+```{r}
+potter_book <- philosophers_stone
+  book_table <- tibble(chapter=seq_along(potter_book), text = potter_book ) %>% 
+    unnest_tokens(sentence,text,token="sentences")
+  
+  book_sent <- book_table %>%  
+    mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+  
+  book_ratio = book_sent %>%  
+    group_by(chapter) %>% 
+    summarize(sum(sentiment)) %>% 
+    dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+  print(ggplot(book_ratio, aes(x=chapter, y=chap_sentiment)) +
+    geom_col(show.legend = FALSE) )
+```
+```{r}
+potter_book <- chamber_of_secrets
+  book_table <- tibble(chapter=seq_along(potter_book), text = potter_book ) %>% 
+    unnest_tokens(sentence,text,token="sentences")
+  
+  book_sent <- book_table %>%  
+    mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+  
+  book_ratio = book_sent %>%  
+    group_by(chapter) %>% 
+    summarize(sum(sentiment)) %>% 
+    dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+  print(ggplot(book_ratio, aes(x=chapter, y=chap_sentiment)) +
+    geom_col(show.legend = FALSE) )
+```
+```{r}
+potter_book <- prisoner_of_azkaban
+  book_table <- tibble(chapter=seq_along(potter_book), text = potter_book ) %>% 
+    unnest_tokens(sentence,text,token="sentences")
+  
+  book_sent <- book_table %>%  
+    mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+  
+  book_ratio = book_sent %>%  
+    group_by(chapter) %>% 
+    summarize(sum(sentiment)) %>% 
+    dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+  print(ggplot(book_ratio, aes(x=chapter, y=chap_sentiment)) +
+    geom_col(show.legend = FALSE) )
+```
+
+```{r}
+potter_book <- goblet_of_fire
+  book_table <- tibble(chapter=seq_along(potter_book), text = potter_book ) %>% 
+    unnest_tokens(sentence,text,token="sentences")
+  
+  book_sent <- book_table %>%  
+    mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+  
+  book_ratio = book_sent %>%  
+    group_by(chapter) %>% 
+    summarize(sum(sentiment)) %>% 
+    dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+  print(ggplot(book_ratio, aes(x=chapter, y=chap_sentiment)) +
+    geom_col(show.legend = FALSE) )
+```
+
+```{r}
+potter_book <- order_of_the_phoenix
+  book_table <- tibble(chapter=seq_along(potter_book), text = potter_book ) %>% 
+    unnest_tokens(sentence,text,token="sentences")
+  
+  book_sent <- book_table %>%  
+    mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+  
+  book_ratio = book_sent %>%  
+    group_by(chapter) %>% 
+    summarize(sum(sentiment)) %>% 
+    dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+  print(ggplot(book_ratio, aes(x=chapter, y=chap_sentiment)) +
+    geom_col(show.legend = FALSE) )
+```
+
+```{r}
+potter_book <- half_blood_prince
+  book_table <- tibble(chapter=seq_along(potter_book), text = potter_book ) %>% 
+    unnest_tokens(sentence,text,token="sentences")
+  
+  book_sent <- book_table %>%  
+    mutate(`sentiment` = round(as.numeric(sentiment_by(get_sentences(sentence))$ave_sentiment ),3 ) )
+  
+  book_ratio = book_sent %>%  
+    group_by(chapter) %>% 
+    summarize(sum(sentiment)) %>% 
+    dplyr::rename('chap_sentiment' = 'sum(sentiment)' )
+  
+  print(ggplot(book_ratio, aes(x=chapter, y=chap_sentiment)) +
+    geom_col(show.legend = FALSE) )
+```
+ 
+ (If I had realized I would be comparing all of the books, I would have done the sentiment analysis on all of them from the start).
