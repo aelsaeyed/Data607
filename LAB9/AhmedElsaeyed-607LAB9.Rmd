@@ -1,0 +1,47 @@
+---
+title: "Recommender System Analysis"
+author: "Ahmed Elsaeyed"
+date: "4/17/2022"
+output:
+  html_document:
+    df_print: paged
+    fig_caption: true
+    css: ae_theme.css
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Goodreads Recommender System
+
+In 2011 Goodreads announced that they would be purchasing a company that was developing a recommender system, and would be integrating that recommender system to make their website better. Here is the article: https://www.goodreads.com/blog/show/271-recommendations-and-discovering-good-reads. 
+
+From the article: 
+"To tackle this highly complex challenge, Goodreads has acquired a company by the name of Discovereads.com. With their deep algorithmic book recommendation technology, we’re going to be able plumb our database of 100 million book ratings from 4.6 million users to find general patterns of the kinds of books people read and to generate high-quality personalized recommendations."
+
+The system will go on to not only improve book recommendation but also help author's purchase ad space tailored to individual users. 
+
+
+## Scenario Design Analysis  
+
+1.
+### Who are the target users?  
+The target users here are book readers who want to track the books they are reading and also look at reviews by other readers. 
+
+2.
+### What are their key goals?  
+The readers want a way to find books that match their interests based on books they've read or reviews they are looking at. 
+
+3.
+### How can you help them accomplish those goals?
+We can help them accomplish their goals by standardizing the things they like about books via a tagging/rating system and then using that information to find books with similar characteristics. 
+
+4. 
+## Reverse Engineering
+From what I can tell, the algorithm suggests books based on what you commonly search, what you have in your "to read" and "have read" lists. Those books are analyzed based on the genres they are placed in by users. Highly rated books likely carry more weight when it comes to recommendations. It takes a user reviewing 10 books or more for the website to be able begin suggesting new ones.  
+
+5. 
+## How to Improve: 
+NLP could be used to observe sentiments in reviews and then suggest books that have similar sentiments. This would provide another layer on top of simply using genre and ratings. 
