@@ -1,5 +1,5 @@
 ---
-title: "AhmedElsaeyed-607FinalProject"
+title: "Credit Card Fraud Detection"
 author: "Ahmed Elsaeyed"
 date: "5/11/2022"
 output:
@@ -10,26 +10,45 @@ output:
     theme: cosmo
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+# Introduction
+
+Credit card fraud detection is important to the banking industry, and has become more and more important as more and more banking happens online. The good thing is that with increased transaction volumes, more data can be collected. That means we can record transactions as well as relevant FEATURES of every transaction. Given that we can identify whether or not a transaction is fraudulent, this kind of dataset on first glance lends itself to machine learning. 
+```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE, class.source = "codechunk")
+
+library(RCurl)
+library(tidyr)
+library(dplyr) 
+library(RCurl)
+library(ggplot2)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# The Data
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+The particular dataset I will be using is found here: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud.
+This data represents 284,807 transactions of European cardholders collected in September 2013. Normally the columns would be labeled with the names of the feature of the transaction they represent, however they have been obscured for confidentiality. The features that are explicitly named are the amount of the transaction, the time in which it took place, and the fraud-or-not label. Note that having the features' names obscured will not hinder the machine learning, as the algorithms will not care. However if we did want to identify specific features as strong indicators of fraud for example, we would need to eventually obtain the feature names. 
 
-```{r cars}
-summary(cars)
+
+
+```{r data prep}
+my_git_url <- getURL("https://media.githubusercontent.com/media/aelsaeyed/Data607/main/creditcard.csv")
+credit_transactions <- read.csv(text = my_git_url, quote = "")
+
 ```
 
-## Including Plots
+```{r data peak}
+head(credit_transactions, 10)
+```
+A feature of this datasat that WILL impact the model negatively is the fact that there are not enough frauds- only 492 out of the 284,807. This level of imbalance in the dataset will lead to a model that is heavily biased towards classifying transactions as legitimate. 
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r data peak}
+credit_transactions["X.Class."] <- sapply(credit_transactions["X.Class."], as.numeric) 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r data peak}
+head(credit_transactions, 10)
+```
+# Goals 
+
+The goal of this project is to 
