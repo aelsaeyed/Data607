@@ -10,45 +10,255 @@ output:
     theme: cosmo
 ---
 
-# Introduction
+# Project Proposal
+I was very interested in the discussion on fraud detection we had last week, and I would like to explore how machine learning is used to tackle this problem. I plan on collecting data from publicly available credit card datasets that contain both fraudulent and authentic transactions, and then creating a few different models that will then be able to classify not-before-seen transactions as fraud or not. I want to focus on logistic regression, but also dip into gradient boosting models and neural nets if possible in R.  
 
-Credit card fraud detection is important to the banking industry, and has become more and more important as more and more banking happens online. The good thing is that with increased transaction volumes, more data can be collected. That means we can record transactions as well as relevant FEATURES of every transaction. Given that we can identify whether or not a transaction is fraudulent, this kind of dataset on first glance lends itself to machine learning. 
+# Introduction
+Credit card fraud detection is important to the banking industry, and has become more and more important as more and more banking happens online. The good thing is that with increased transaction volumes, more data can be collected. That means we can record transactions as well as relevant FEATURES of every transaction. Given that we can identify whether or not a transaction is fraudulent, this kind of data set at first glance lends itself to machine learning. 
 ```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE, class.source = "codechunk")
 
+library(dplyr) # for data manipulation
+library(stringr) # for data manipulation
+library(caret) # for sampling
+library(caTools) # for train/test split
+library(ggplot2) # for data visualization
+library(corrplot) # for correlations
+library(Rtsne) # for tsne plotting
+library(DMwR2) # for smote implementation
+library(ROSE)# for ROSE sampling
+library(rpart)# for decision tree model
+library(Rborist)# for random forest model
 library(RCurl)
-library(tidyr)
-library(dplyr) 
-library(RCurl)
-library(ggplot2)
+
 ```
 
 
 # The Data
-
-The particular dataset I will be using is found here: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud.
+The particular data set I will be using is found here: https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud.
 This data represents 284,807 transactions of European cardholders collected in September 2013. Normally the columns would be labeled with the names of the feature of the transaction they represent, however they have been obscured for confidentiality. The features that are explicitly named are the amount of the transaction, the time in which it took place, and the fraud-or-not label. Note that having the features' names obscured will not hinder the machine learning, as the algorithms will not care. However if we did want to identify specific features as strong indicators of fraud for example, we would need to eventually obtain the feature names. 
 
+# New Technique to Upload Large Files to Git
+This data set is understandably huge, and so I had to figure out a way to upload it to github as a normal "git push" would not be allowed since the data exceeds 100 mb. I decided to use "git lfs". The instructions to use it are as follows (for Mac: 
 
+Install the package using brew, and then install it in the directory one intends to use git:
+-brew install git-lfs
+-git lfs install
+
+Track the large file like so, and also (very important!) track .gitattributes:
+-git lfs track creditcard.csv
+-git add .gitattributes
+
+Add, commit, and push the large file normally:
+-git add creditcard.csv
+-git commmit 
+-git push
+
+It will be uploaded, and git-lfs will take care of managing the upload and it will appear on your repo.
 
 ```{r data prep}
 my_git_url <- getURL("https://media.githubusercontent.com/media/aelsaeyed/Data607/main/creditcard.csv")
-credit_transactions <- read.csv(text = my_git_url, quote = "")
-
+credit_transactions <- read.csv(text = my_git_url)
 ```
 
-```{r data peak}
-head(credit_transactions, 10)
+Below we can see a summary of the many features included in the dataset:
+```{r data peek}
+summary(credit_transactions, 10)
 ```
-A feature of this datasat that WILL impact the model negatively is the fact that there are not enough frauds- only 492 out of the 284,807. This level of imbalance in the dataset will lead to a model that is heavily biased towards classifying transactions as legitimate. 
+A feature of this data set that WILL impact the model negatively is the fact that there are not enough frauds- only 492 out of the 284,807. This level of imbalance in the data set will lead to a model that is heavily biased towards classifying transactions as legitimate. It seems that fraud doesn't happen nearly as often as legitimate transactions, however there is still a need to catch these transactions. 
 
-```{r data peak}
-credit_transactions["X.Class."] <- sapply(credit_transactions["X.Class."], as.numeric) 
-```
-
-```{r data peak}
-head(credit_transactions, 10)
+```{r imbalance }
+credit_transactions %>% 
+  filter(Class == 1)
 ```
 # Goals 
 
-The goal of this project is to 
+The goal of this project is to investigate methods of working around the problem of having an imbalanced class. There are several different ways to do this, and we can test them all out against test data to see which yields the best results. 
+
+# Data Cleanup
+
+First I will remove the "time" column because it is not the actual time of the transactions, but rather time since the first transaction. I will also change the "Class" variable to a factor. I learned that this improves performance when using this variable for machine learning as it will be treated as a truly categorical variable. It works because we know the elements can only be one of two discrete values, 0 for non-fraud, 1 for fraud. 
+
+```{r cleanup}
+credit_transactions_cleaned <- credit_transactions[,-1]
+
+credit_transactions_cleaned$Class <- as.factor(credit_transactions_cleaned$Class)
+levels(credit_transactions_cleaned$Class) <- c("Legit", "Fraud")
+
+credit_transactions_cleaned[,-30] <- scale(credit_transactions_cleaned[,-30]) 
+
+head(credit_transactions_cleaned, 10)
+```
+
+
+# Split Training Data
+
+Here I split the data into testing and training subsets such that 70% of it will be used to train, and 30% to test. It will use the Class column to split. 
+```{r }
+set.seed(123)
+split <- sample.split(credit_transactions_cleaned$Class, SplitRatio = 0.7)
+train <-  subset(credit_transactions_cleaned, split == TRUE)
+test <- subset(credit_transactions_cleaned, split == FALSE)
+
+```
+
+```{r }
+table(test$Class)
+table(train$Class)
+```
+
+# Baseline with Decision Tree
+Here I will create a decision tree model on the data set as-is to establish a baseline. Rpart allows us to specify which variable is our "label", and specify our training data from above. We can then use predict to run the sequestered test data through the model. 
+
+In order to evaluate the model, I use a ROC curve- Receiver Operator Characteristic curve. As a quick summary, the ROC curve plots the true negative rate against false positive rate, essentially showing us how well the model does differentiating between wrong predictions and right predictions. The AUC, area under the curve, is a quick way to summarize the ROC curve, with areas closer to 1 indicating that the model is better at distinguishing between "Legit" and "Fraud". 
+
+Here the area is 0.912, which is now our baseline.
+```{r baseline using unbalanced dataset}
+
+set.seed(5627)
+
+orig_fit <- rpart(Class ~ ., data = train)
+pred_orig <- predict(orig_fit, newdata = test, method = "class")
+
+roc.curve(test$Class, pred_orig[,2], plotit = TRUE)
+```
+# Downsampling with Decision Tree
+
+Now I will modify the original dataset by downsampling. Downsampling is a process where data from the overwhelming negative class, in this case "Legit" transactions, is removed to even out the distribution of legit and fraudulent transactions. The function downSample takes care of this for us, after we specify the "Class" variable from our training data set.
+
+We make use of Rpart once more to create a decision tree model using the newly downsampled data, and then use it to predict using the test data. We find that our AUC has gone up to 0.942- a good improvement.
+```{r Downsampling}
+
+set.seed(9560)
+down_train <- downSample(x = train[, -ncol(train)],y = train$Class)
+table(down_train$Class)
+
+down_fit <- rpart(Class ~ ., data = down_train)
+
+pred_down <- predict(down_fit, newdata = test)
+roc.curve(test$Class, pred_down[,2], plotit = TRUE)
+```
+
+# Upsampling with Decision Tree
+
+Now I will modify the original dataset by upsampling this time. Upsampling is a process where data from the small positive class, in this case "Fraud" transactions, is augmented to even out the distribution of legit and fraudulent transactions. The function upSample takes care of this for us.
+
+We make use of Rpart once more to create a decision tree model using the newly upsampled data, and then use it to predict using the test data. We find that our AUC has gone up to 0.943- an even larger improvement.
+
+We can say for now that upsampling seems to be the slightly more favorable method to balance out the data. 
+```{r Upsampling}
+
+set.seed(9560)
+up_train <- upSample(x = train[, -ncol(train)],y = train$Class)
+table(up_train$Class)
+
+up_fit <- rpart(Class ~ ., data = up_train)
+
+pred_up <- predict(up_fit, newdata = test)
+roc.curve(test$Class, pred_up[,2], plotit = TRUE)
+```
+# Baseline with Logistic Regression
+
+I will try this experiment again, but with a logistic regression model instead of decision tree. First, the baseline - our AUC is 0.967, already higher from the jump.
+```{r logistic regression baseline}
+
+glm_fit <- glm(Class ~ ., data = train, family = 'binomial')
+
+pred_glm <- predict(glm_fit, newdata = test, type = 'response')
+
+roc.curve(test$Class, pred_glm, plotit = TRUE)
+```
+# Downsampling with Logistic Regression
+The AUC after downsampling jumps up to 0.968.
+```{r logistic regression with down sampling}
+
+glm_fit <- glm(Class ~ ., data = down_train, family = 'binomial')
+
+pred_glm <- predict(glm_fit, newdata = test, type = 'response')
+
+roc.curve(test$Class, pred_glm, plotit = TRUE)
+```
+
+# Upsampling with Logistic Regression
+The AUC after upsampling jumps up even further to 0.971. 
+```{r logistic regression with upsampling}
+
+glm_fit <- glm(Class ~ ., data = up_train, family = 'binomial')
+
+pred_glm <- predict(glm_fit, newdata = test, type = 'response')
+
+roc.curve(test$Class, pred_glm, plotit = TRUE)
+```
+Upsampling has provided a better AUC score and hence a better model across both models. This is intuitive because downsampling represents a loss of information, since it removes data associated with the majority negative class. However, since I am using random upsampling, these models might be slightly overfitted. That is because random upsampling will simply duplicate "Fraud" records. 
+
+
+
+As mentioned before, the features of the transactions have been masked, however that does not stop us from slightly improving this model by using only the top most influential or important features. Here are all the features and their weight, which we can display by looking at the object provided by glm: 
+
+```{r glm}
+glm_fit
+```
+
+Here I simply rank them in order from most influential to least. This shows us that the feature V4 is the most important feature in classifying a transaction as fraudulent or not, followed by V14 and so on. 
+```{r find most important features}
+importance <- as.data.frame(varImp(glm_fit)) %>% 
+  arrange(desc(Overall))
+importance
+```
+
+I will redo the above experiment with decision trees, this time however with only the top 10 most important features.
+```{r get important features only}
+
+credit_transactions_if <- credit_transactions[,-1]
+
+credit_transactions_if$Class <- as.factor(credit_transactions_if$Class)
+levels(credit_transactions_if$Class) <- c("Legit", "Fraud")
+
+credit_transactions_if[,-30] <- scale(credit_transactions_if[,-30]) 
+
+credit_transactions_if <- credit_transactions_if %>% 
+  select(V4, V14, V13, V12, V11, V22, V10, V8, V19, V15, Class)
+
+head(credit_transactions_if, 10)
+```
+
+Recreating the training/testing data:
+```{r }
+set.seed(123)
+split2 <- sample.split(credit_transactions_if$Class, SplitRatio = 0.7)
+train_if <-  subset(credit_transactions_if, split2 == TRUE)
+test_if <- subset(credit_transactions_if, split2 == FALSE)
+
+```
+
+```{r }
+table(test_if$Class)
+table(train_if$Class)
+```
+
+I will once again get a baseline using a decision tree model, but of course with only the 10 chose features. Our baseline AUC is now 0.892. 
+```{r baseline using unbalanced dataset but only important factors}
+
+set.seed(5627)
+
+orig_fit_if <- rpart(Class ~ ., data = train_if)
+pred_orig_if <- predict(orig_fit_if, newdata = test_if, method = "class")
+
+roc.curve(test$Class, pred_orig_if[,2], plotit = TRUE)
+```
+Now I will upsample the important-factors-only dataset and see how much the model improves. The AUC jumps up to 0.962, which beats the upsampled decision tree model from before that used all of the features (0.943).
+```{r Upsampling important factors only}
+
+set.seed(9560)
+up_train_if <- upSample(x = test_if[, -ncol(test_if)],y = test_if$Class)
+table(up_train$Class)
+
+up_fit_if <- rpart(Class ~ ., data = up_train_if)
+
+pred_up_if <- predict(up_fit_if, newdata = test_if)
+roc.curve(test_if$Class, pred_up_if[,2], plotit = TRUE)
+```
+This project demonstrates that upsampling and downsampling are viable and useful ways of dealing with unbalanced data. This was done with simple up/down sampling, ie randomly removing or adding records. More advanced versions of upsampling exist that can potentially provide even better models. 
+
+
+
